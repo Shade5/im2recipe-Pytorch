@@ -17,7 +17,7 @@ random.seed(opts.seed)
 type_embedding = opts.embtype 
 # 'image'
 # type_embedding = 'recipe'
-print opts.path_results
+print((opts.path_results))
 with open(os.path.join(opts.path_results,'img_embeds.pkl'),'rb') as f:
     im_vecs = pickle.load(f)
 with open(os.path.join(opts.path_results,'rec_embeds.pkl'),'rb') as f:
@@ -31,13 +31,13 @@ names = names[idxs]
 
 # Ranker
 N = opts.medr
-idxs = range(N)
+idxs = list(range(N))
 
 glob_rank = []
 glob_recall = {1:0.0,5:0.0,10:0.0}
 for i in range(10):
 
-    ids = random.sample(xrange(0,len(names)), N)
+    ids = random.sample(list(range(0,len(names))), N)
     im_sub = im_vecs[ids,:]
     instr_sub = instr_vecs[ids,:]
     ids_sub = names[ids]
@@ -73,17 +73,17 @@ for i in range(10):
         # store the position
         med_rank.append(pos+1)
 
-    for i in recall.keys():
+    for i in list(recall.keys()):
         recall[i]=recall[i]/N
 
     med = np.median(med_rank)
-    print "median", med
+    print(("median", med))
 
-    for i in recall.keys():
+    for i in list(recall.keys()):
         glob_recall[i]+=recall[i]
     glob_rank.append(med)
 
-for i in glob_recall.keys():
+for i in list(glob_recall.keys()):
     glob_recall[i] = glob_recall[i]/10
-print "Mean median", np.average(glob_rank)
-print "Recall", glob_recall
+print(("Mean median", np.average(glob_rank)))
+print(("Recall", glob_recall))

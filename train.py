@@ -8,8 +8,6 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-import torchvision.models as models
 import torch.backends.cudnn as cudnn
 from data_loader import ImagerLoader 
 from args import get_parser
@@ -43,7 +41,7 @@ def main():
 
     # # creating different parameter groups
     vision_params = list(map(id, model.visionMLP.parameters()))
-    base_params   = filter(lambda p: id(p) not in vision_params, model.parameters())
+    base_params   = [p for p in model.parameters() if id(p) not in vision_params]
    
     # optimizer - with lr initialized accordingly
     optimizer = torch.optim.Adam([
@@ -53,16 +51,16 @@ def main():
 
     if opts.resume:
         if os.path.isfile(opts.resume):
-            print("=> loading checkpoint '{}'".format(opts.resume))
+            print(("=> loading checkpoint '{}'".format(opts.resume)))
             checkpoint = torch.load(opts.resume)
             opts.start_epoch = checkpoint['epoch']
             best_val = checkpoint['best_val']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
-            print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(opts.resume, checkpoint['epoch']))
+            print(("=> loaded checkpoint '{}' (epoch {})"
+                  .format(opts.resume, checkpoint['epoch'])))
         else:
-            print("=> no checkpoint found at '{}'".format(opts.resume))
+            print(("=> no checkpoint found at '{}'".format(opts.resume)))
             best_val = float('inf') 
     else:
         best_val = float('inf') 
@@ -70,9 +68,9 @@ def main():
     # models are save only when their loss obtains the best value in the validation
     valtrack = 0
 
-    print 'There are %d parameter groups' % len(optimizer.param_groups)
-    print 'Initial base params lr: %f' % optimizer.param_groups[0]['lr']
-    print 'Initial vision params lr: %f' % optimizer.param_groups[1]['lr']
+    print(('There are %d parameter groups' % len(optimizer.param_groups)))
+    print(('Initial base params lr: %f' % optimizer.param_groups[0]['lr']))
+    print(('Initial vision params lr: %f' % optimizer.param_groups[1]['lr']))
 
     # data preparation, loaders
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -93,7 +91,7 @@ def main():
         ]),data_path=opts.data_path,partition='train',sem_reg=opts.semantic_reg),
         batch_size=opts.batch_size, shuffle=True,
         num_workers=opts.workers, pin_memory=True)
-    print 'Training loader prepared.'
+    print('Training loader prepared.')
 
     # preparing validation loader 
     val_loader = torch.utils.data.DataLoader(
@@ -106,7 +104,7 @@ def main():
         ]),data_path=opts.data_path,sem_reg=opts.semantic_reg,partition='val'),
         batch_size=opts.batch_size, shuffle=False,
         num_workers=opts.workers, pin_memory=True)
-    print 'Validation loader prepared.'
+    print('Validation loader prepared.')
 
     # run epochs
     for epoch in range(opts.start_epoch, opts.epochs):
@@ -143,7 +141,7 @@ def main():
                 'curr_val': val_loss,
             }, is_best)
 
-            print '** Validation: %f (best) - %d (valtrack)' % (best_val, valtrack)
+            print(('** Validation: %f (best) - %d (valtrack)' % (best_val, valtrack)))
 
 def train(train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
@@ -205,20 +203,20 @@ def train(train_loader, model, criterion, optimizer, epoch):
         end = time.time()
 
     if opts.semantic_reg:
-        print('Epoch: {0}\t'
+        print(('Epoch: {0}\t'
                   'cos loss {cos_loss.val:.4f} ({cos_loss.avg:.4f})\t'
                   'img Loss {img_loss.val:.4f} ({img_loss.avg:.4f})\t'
                   'rec loss {rec_loss.val:.4f} ({rec_loss.avg:.4f})\t'
                   'vision ({visionLR}) - recipe ({recipeLR})\t'.format(
                    epoch, cos_loss=cos_losses, img_loss=img_losses,
                    rec_loss=rec_losses, visionLR=optimizer.param_groups[1]['lr'],
-                   recipeLR=optimizer.param_groups[0]['lr']))
+                   recipeLR=optimizer.param_groups[0]['lr'])))
     else:
-         print('Epoch: {0}\t'
+         print(('Epoch: {0}\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'vision ({visionLR}) - recipe ({recipeLR})\t'.format(
                    epoch, loss=cos_losses, visionLR=optimizer.param_groups[1]['lr'],
-                   recipeLR=optimizer.param_groups[0]['lr']))                 
+                   recipeLR=optimizer.param_groups[0]['lr'])))                 
 
 def validate(val_loader, model, criterion):
     batch_time = AverageMeter()
@@ -255,8 +253,8 @@ def validate(val_loader, model, criterion):
             data3 = np.concatenate((data3,target[-1]),axis=0)
 
     medR, recall = rank(opts, data0, data1, data2)
-    print('* Val medR {medR:.4f}\t'
-          'Recall {recall}'.format(medR=medR, recall=recall))
+    print(('* Val medR {medR:.4f}\t'
+          'Recall {recall}'.format(medR=medR, recall=recall)))
 
     return medR 
 
@@ -273,13 +271,13 @@ def rank(opts, img_embeds, rec_embeds, rec_ids):
 
     # Ranker
     N = opts.medr
-    idxs = range(N)
+    idxs = list(range(N))
 
     glob_rank = []
     glob_recall = {1:0.0,5:0.0,10:0.0}
     for i in range(10):
 
-        ids = random.sample(xrange(0,len(names)), N)
+        ids = random.sample(list(range(0,len(names))), N)
         im_sub = im_vecs[ids,:]
         instr_sub = instr_vecs[ids,:]
         ids_sub = names[ids]
@@ -315,17 +313,17 @@ def rank(opts, img_embeds, rec_embeds, rec_ids):
             # store the position
             med_rank.append(pos+1)
 
-        for i in recall.keys():
+        for i in list(recall.keys()):
             recall[i]=recall[i]/N
 
         med = np.median(med_rank)
         # print "median", med
 
-        for i in recall.keys():
+        for i in list(recall.keys()):
             glob_recall[i]+=recall[i]
         glob_rank.append(med)
 
-    for i in glob_recall.keys():
+    for i in list(glob_recall.keys()):
         glob_recall[i] = glob_recall[i]/10
 
     return np.average(glob_rank), glob_recall
@@ -362,8 +360,8 @@ def adjust_learning_rate(optimizer, epoch, opts):
     # parameters corresponding to visionMLP 
     optimizer.param_groups[1]['lr'] = opts.lr * opts.freeVision 
 
-    print 'Initial base params lr: %f' % optimizer.param_groups[0]['lr']
-    print 'Initial vision lr: %f' % optimizer.param_groups[1]['lr']
+    print(('Initial base params lr: %f' % optimizer.param_groups[0]['lr']))
+    print(('Initial vision lr: %f' % optimizer.param_groups[1]['lr']))
 
     # after first modality change we set patience to 3
     opts.patience = 3

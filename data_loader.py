@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import torch.utils.data as data
 from PIL import Image
 import os
@@ -14,7 +14,6 @@ def default_loader(path):
         im = Image.open(path).convert('RGB')
         return im
     except:
-        print(..., file=sys.stderr)
         return Image.new('RGB', (224, 224), 'white')
 
 
@@ -58,7 +57,7 @@ class ImagerLoader(data.Dataset):
         elif self.partition == 'val' or self.partition == 'test':
             match = True
         else:
-            raise 'Partition name not well defined'
+            raise Exception('Partition name not well defined')
 
         target = match and 1 or -1
 
@@ -71,7 +70,7 @@ class ImagerLoader(data.Dataset):
         if target == 1:
             if self.partition == 'train':
                 # We do only use the first five images per recipe during training
-                imgIdx = np.random.choice(range(min(5, len(imgs))))
+                imgIdx = np.random.choice(list(range(min(5, len(imgs)))))
             else:
                 imgIdx = 0
 
@@ -80,7 +79,7 @@ class ImagerLoader(data.Dataset):
             path = os.path.join(self.imgPath, self.partition, loader_path, imgs[imgIdx]['id'])
         else:
             # we randomly pick one non-matching image
-            all_idx = range(len(self.ids))
+            all_idx = list(range(len(self.ids)))
             rndindex = np.random.choice(all_idx)
             while rndindex == index:
                 rndindex = np.random.choice(all_idx)  # pick a random index
@@ -93,7 +92,7 @@ class ImagerLoader(data.Dataset):
 
             if self.partition == 'train':  # if training we pick a random image
                 # We do only use the first five images per recipe during training
-                imgIdx = np.random.choice(range(min(5, len(rndimgs))))
+                imgIdx = np.random.choice(list(range(min(5, len(rndimgs)))))
             else:
                 imgIdx = 0
 

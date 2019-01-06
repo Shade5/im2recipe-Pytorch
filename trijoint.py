@@ -1,11 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.parallel
-import torch.legacy as legacy
 import torch.optim
 import torch.utils.data
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
 import torchvision.models as models
 import torchwordemb
 from args import get_parser
@@ -98,8 +95,7 @@ class ingRNN(nn.Module):
 class im2recipe(nn.Module):
     def __init__(self):
         super(im2recipe, self).__init__()
-        if opts.preModel=='resNet50':
-        
+        if opts.preModel == 'resNet50':
             resnet = models.resnet50(pretrained=True)
             modules = list(resnet.children())[:-1]  # we do not use the last fc layer.
             self.visionMLP = nn.Sequential(*modules)

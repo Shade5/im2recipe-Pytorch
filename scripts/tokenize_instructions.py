@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
 
     t = time.time()
-    print "Saving tokenized here:", 'files/tokenized_instructions_'+partition+'.txt'
+    print(("Saving tokenized here:", 'files/tokenized_instructions_'+partition+'.txt'))
     f = open('files/tokenized_instructions_'+partition+'.txt','w')
     for i,entry in tqdm(enumerate(layer1)):
         '''
@@ -84,8 +84,8 @@ if __name__ == "__main__":
         f.write(allinstrs + '\n')
 
     f.close()
-    print time.time() - t, 'seconds.'
-    print "Number of unique ingredients",len(np.unique(ingrs))
+    print((time.time() - t, 'seconds.'))
+    print(("Number of unique ingredients",len(np.unique(ingrs))))
     f = open('files/tokenized_instructions_'+partition+'.txt','r')
     text = f.read()
     text = tok(text)

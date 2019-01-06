@@ -5,9 +5,6 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-import torchvision.models as models
-import torch.backends.cudnn as cudnn
 from data_loader import ImagerLoader # our data_loader
 import numpy as np
 from trijoint import im2recipe
@@ -25,11 +22,10 @@ if not opts.no_cuda:
 
 np.random.seed(opts.seed)
 
+
 def main():
-   
     model = im2recipe()
     model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0,1,2,3])
-    # model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0,1])
     if not opts.no_cuda:
         model.cuda()
 
@@ -52,32 +48,35 @@ def main():
     else:
         criterion = cosine_crit
 
-    print("=> loading checkpoint '{}'".format(opts.model_path))
+    print(("=> loading checkpoint '{}'".format(opts.model_path)))
     checkpoint = torch.load(opts.model_path)
     opts.start_epoch = checkpoint['epoch']
     model.load_state_dict(checkpoint['state_dict'])
-    print("=> loaded checkpoint '{}' (epoch {})"
-          .format(opts.model_path, checkpoint['epoch']))
+    print(("=> loaded checkpoint '{}' (epoch {})"
+          .format(opts.model_path, checkpoint['epoch'])))
 
     # data preparation, loaders
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    
-    # preparing test loader 
+
+    # preparing test loader
     test_loader = torch.utils.data.DataLoader(
         ImagerLoader(opts.img_path,
- 	    transforms.Compose([
-            transforms.Scale(256), # rescale the image keeping the original aspect ratio
-            transforms.CenterCrop(224), # we get only the center of that rescaled
-            transforms.ToTensor(),
-            normalize,
-        ]),data_path=opts.data_path,sem_reg=opts.semantic_reg,partition='test'),
+                     transforms.Compose([
+                                transforms.Scale(256), # rescale the image keeping the original aspect ratio
+                                transforms.CenterCrop(224), # we get only the center of that rescaled
+                                transforms.ToTensor(),
+                                normalize,]),
+                     data_path=opts.data_path,
+                     sem_reg=opts.semantic_reg,
+                     partition='test'),
         batch_size=opts.batch_size, shuffle=False,
         num_workers=opts.workers, pin_memory=(not opts.no_cuda))
-    print 'Test loader prepared.'
+    print('Test loader prepared.')
 
     # run test
     test(test_loader, model, criterion)
+
 
 def test(test_loader, model, criterion):
     batch_time = AverageMeter()
@@ -91,7 +90,7 @@ def test(test_loader, model, criterion):
 
     end = time.time()
     for i, (input, target) in enumerate(test_loader):
-        input_var = list() 
+        input_var = list()
         for j in range(len(input)):
             v = torch.autograd.Variable(input[j], volatile=True)
         target_var = list()
@@ -102,7 +101,7 @@ def test(test_loader, model, criterion):
 
         # compute output
         output = model(input_var[0],input_var[1], input_var[2], input_var[3], input_var[4])
-   
+
         # compute loss
         if opts.semantic_reg:
             cos_loss = criterion[0](output[0], output[1], target_var[0])
@@ -111,7 +110,7 @@ def test(test_loader, model, criterion):
             # combined loss
             loss =  opts.cos_weight * cos_loss +\
                     opts.cls_weight * img_loss +\
-                    opts.cls_weight * rec_loss 
+                    opts.cls_weight * rec_loss
 
             # measure performance and record losses
             cos_losses.update(cos_loss.data[0], input[0].size(0))
@@ -125,7 +124,7 @@ def test(test_loader, model, criterion):
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
-        
+
         if i==0:
             data0 = output[0].data.cpu().numpy()
             data1 = output[1].data.cpu().numpy()
@@ -138,11 +137,11 @@ def test(test_loader, model, criterion):
             data3 = np.concatenate((data3,target[-1]),axis=0)
 
     if opts.semantic_reg:
-        print('* Test cosine loss {losses.avg:.4f}'.format(losses=cos_losses))
-        print('* Test img class loss {losses.avg:.4f}'.format(losses=img_losses))
-        print('* Test rec class loss {losses.avg:.4f}'.format(losses=rec_losses))
+        print(('* Test cosine loss {losses.avg:.4f}'.format(losses=cos_losses)))
+        print(('* Test img class loss {losses.avg:.4f}'.format(losses=img_losses)))
+        print(('* Test rec class loss {losses.avg:.4f}'.format(losses=rec_losses)))
     else:
-        print('* Test loss {losses.avg:.4f}'.format(losses=cos_losses))
+        print(('* Test loss {losses.avg:.4f}'.format(losses=cos_losses)))
 
     with open(opts.path_results+'img_embeds.pkl', 'wb') as f:
         pickle.dump(data0, f)
@@ -154,6 +153,7 @@ def test(test_loader, model, criterion):
         pickle.dump(data3, f)
 
     return cos_losses.avg
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -171,6 +171,7 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
 
 if __name__ == '__main__':
     main()

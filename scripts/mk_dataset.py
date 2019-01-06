@@ -34,7 +34,7 @@ def get_st(file):
     st_vecs['rbps'] = info['rbps']
     st_vecs['ids'] = imids
 
-    print(np.shape(st_vecs['encs']),len(st_vecs['rlens']),len(st_vecs['rbps']),len(st_vecs['ids']))
+    print((np.shape(st_vecs['encs']),len(st_vecs['rlens']),len(st_vecs['rbps']),len(st_vecs['ids'])))
     return st_vecs
 
 # =============================================================================
@@ -62,7 +62,7 @@ for part in ['train','val','test']:
     for i,id in enumerate(st_vecs[part]['ids']):
         stid2idx[part][id] = i
 
-print ("Done.",time.time() - t)
+print(("Done.",time.time() - t))
 
 print('Loading dataset.')
 # print DATASET
@@ -121,9 +121,9 @@ for i,entry in tqdm(enumerate(dataset)):
     # keys to be saved in a pickle file    
     keys[partition].append(entry['id'])
 
-for k in keys.keys():
+for k in list(keys.keys()):
     with open('../data/{}_keys.pkl'.format(k),'wb') as f:
         pickle.dump(keys[k],f)
 
-print('Training samples: %d - Validation samples: %d - Testing samples: %d' % (len(keys['train']),len(keys['val']),len(keys['test'])))
+print(('Training samples: %d - Validation samples: %d - Testing samples: %d' % (len(keys['train']),len(keys['val']),len(keys['test']))))
 
