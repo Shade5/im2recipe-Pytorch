@@ -63,7 +63,7 @@ def main():
     test_loader = torch.utils.data.DataLoader(
         ImagerLoader(opts.img_path,
                      transforms.Compose([
-                                transforms.Scale(256), # rescale the image keeping the original aspect ratio
+                                transforms.Resize(256), # rescale the image keeping the original aspect ratio
                                 transforms.CenterCrop(224), # we get only the center of that rescaled
                                 transforms.ToTensor(),
                                 normalize,]),
@@ -89,53 +89,54 @@ def test(test_loader, model, criterion):
     model.eval()
 
     end = time.time()
-    for i, (input, target) in enumerate(test_loader):
-        input_var = list()
-        for j in range(len(input)):
-            v = torch.autograd.Variable(input[j], volatile=True)
-            input_var.append(v.cuda() if not opts.no_cuda else v)
-        target_var = list()
-        for j in range(len(target)-2): # we do not consider the last two objects of the list
-            target[j] = target[j]
-            v = torch.autograd.Variable(target[j], volatile=True)
-            target_var.append(v.cuda() if not opts.no_cuda else v)
+    with torch.no_grad():
+        for i, (input, target) in enumerate(test_loader):
+            input_var = list()
+            for j in range(len(input)):
+                v = torch.autograd.Variable(input[j])
+                input_var.append(v.cuda() if not opts.no_cuda else v)
+            target_var = list()
+            for j in range(len(target)-2): # we do not consider the last two objects of the list
+                target[j] = target[j]
+                v = torch.autograd.Variable(target[j])
+                target_var.append(v.cuda() if not opts.no_cuda else v)
 
-        # compute output
-        output = model(input_var[0],input_var[1], input_var[2], input_var[3], input_var[4])
+            # compute output
+            output = model(input_var[0],input_var[1], input_var[2], input_var[3], input_var[4])
 
-        # compute loss
-        if opts.semantic_reg:
-            cos_loss = criterion[0](output[0], output[1], target_var[0].float())
-            img_loss = criterion[1](output[2], target_var[1])
-            rec_loss = criterion[1](output[3], target_var[2])
-            # combined loss
-            loss =  opts.cos_weight * cos_loss +\
-                    opts.cls_weight * img_loss +\
-                    opts.cls_weight * rec_loss
+            # compute loss
+            if opts.semantic_reg:
+                cos_loss = criterion[0](output[0], output[1], target_var[0].float())
+                img_loss = criterion[1](output[2], target_var[1])
+                rec_loss = criterion[1](output[3], target_var[2])
+                # combined loss
+                loss =  opts.cos_weight * cos_loss +\
+                        opts.cls_weight * img_loss +\
+                        opts.cls_weight * rec_loss
 
-            # measure performance and record losses
-            cos_losses.update(cos_loss.data[0], input[0].size(0))
-            img_losses.update(img_loss.data[0], input[0].size(0))
-            rec_losses.update(rec_loss.data[0], input[0].size(0))
-        else:
-            loss = criterion(output[0], output[1], target_var[0])
-            # measure performance and record loss
-            cos_losses.update(loss.data[0], input[0].size(0))
+                # measure performance and record losses
+                cos_losses.update(cos_loss.item(), input[0].size(0))
+                img_losses.update(img_loss.item(), input[0].size(0))
+                rec_losses.update(rec_loss.item(), input[0].size(0))
+            else:
+                loss = criterion(output[0], output[1], target_var[0])
+                # measure performance and record loss
+                cos_losses.update(loss.data[0], input[0].size(0))
 
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
 
-        if i==0:
-            data0 = output[0].data.cpu().numpy()
-            data1 = output[1].data.cpu().numpy()
-            data2 = target[-2]
-            data3 = target[-1]
-        else:
-            data0 = np.concatenate((data0,output[0].data.cpu().numpy()),axis=0)
-            data1 = np.concatenate((data1,output[1].data.cpu().numpy()),axis=0)
-            data2 = np.concatenate((data2,target[-2]),axis=0)
-            data3 = np.concatenate((data3,target[-1]),axis=0)
+            if i==0:
+                data0 = output[0].data.cpu().numpy()
+                data1 = output[1].data.cpu().numpy()
+                data2 = target[-2]
+                data3 = target[-1]
+            else:
+                data0 = np.concatenate((data0,output[0].data.cpu().numpy()),axis=0)
+                data1 = np.concatenate((data1,output[1].data.cpu().numpy()),axis=0)
+                data2 = np.concatenate((data2,target[-2]),axis=0)
+                data3 = np.concatenate((data3,target[-1]),axis=0)
 
     if opts.semantic_reg:
         print(('* Test cosine loss {losses.avg:.4f}'.format(losses=cos_losses)))
