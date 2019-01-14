@@ -14,6 +14,7 @@ def default_loader(path):
         im = Image.open(path).convert('RGB')
         return im
     except:
+        print("Missing image", path)
         return Image.new('RGB', (224, 224), 'white')
 
 
@@ -62,8 +63,8 @@ class ImagerLoader(data.Dataset):
         target = match and 1 or -1
 
         with self.env.begin(write=False) as txn:
-            serialized_sample = txn.get(self.ids[index])
-        sample = pickle.loads(serialized_sample)
+            serialized_sample = txn.get(self.ids[index].encode())
+        sample = pickle.loads(serialized_sample, encoding='latin1')
         imgs = sample['imgs']
 
         # image

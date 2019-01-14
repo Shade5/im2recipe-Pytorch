@@ -13,7 +13,7 @@ def get_parser():
     parser.add_argument('--workers', default=30, type=int)
 
     # model
-    parser.add_argument('--batch_size', default=160, type=int)
+    parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--snapshots', default='snapshots/',type=str)
 
     # im2recipe model
@@ -49,7 +49,7 @@ def get_parser():
 
     # test
     parser.add_argument('--path_results', default='results/', type=str)
-    parser.add_argument('--model_path', default='snapshots/model_e220_v-4.700.pth.tar', type=str)    
+    parser.add_argument('--model_path', default='snapshots/model_3.pth', type=str)
     
 
     # MedR / Recall@1 / Recall@5 / Recall@10

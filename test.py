@@ -25,7 +25,7 @@ np.random.seed(opts.seed)
 
 def main():
     model = im2recipe()
-    model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0,1,2,3])
+    model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0])
     if not opts.no_cuda:
         model.cuda()
 
@@ -50,10 +50,10 @@ def main():
 
     print(("=> loading checkpoint '{}'".format(opts.model_path)))
     checkpoint = torch.load(opts.model_path)
-    opts.start_epoch = checkpoint['epoch']
-    model.load_state_dict(checkpoint['state_dict'])
+    opts.start_epoch = 3
+    model.load_state_dict(checkpoint)
     print(("=> loaded checkpoint '{}' (epoch {})"
-          .format(opts.model_path, checkpoint['epoch'])))
+          .format(opts.model_path, opts.start_epoch)))
 
     # data preparation, loaders
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -93,6 +93,7 @@ def test(test_loader, model, criterion):
         input_var = list()
         for j in range(len(input)):
             v = torch.autograd.Variable(input[j], volatile=True)
+            input_var.append(v.cuda() if not opts.no_cuda else v)
         target_var = list()
         for j in range(len(target)-2): # we do not consider the last two objects of the list
             target[j] = target[j]
@@ -104,7 +105,7 @@ def test(test_loader, model, criterion):
 
         # compute loss
         if opts.semantic_reg:
-            cos_loss = criterion[0](output[0], output[1], target_var[0])
+            cos_loss = criterion[0](output[0], output[1], target_var[0].float())
             img_loss = criterion[1](output[2], target_var[1])
             rec_loss = criterion[1](output[3], target_var[2])
             # combined loss
