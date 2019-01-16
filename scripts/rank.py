@@ -1,8 +1,6 @@
 import os
 import random
 import numpy as np
-import utils
-import torchfile
 import pickle
 import sys
 sys.path.append("..")
@@ -62,6 +60,7 @@ for i in range(10):
 
         # find where the index of the pair sample ended up in the sorting
         pos = sorting.index(ii)
+        print(pos, name, ids_sub[sorting[:5]])
 
         if (pos+1) == 1:
             recall[1]+=1

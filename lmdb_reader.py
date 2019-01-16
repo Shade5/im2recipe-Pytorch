@@ -6,9 +6,12 @@ env = lmdb.open('data/test_lmdb', max_readers=1, readonly=True, lock=False, read
 with open('data/test_keys.pkl', 'rb') as f:
 	ids = pickle.load(f)
 
-with env.begin(write=False) as txn:
-	serialized_sample = txn.get(ids[0].encode())
-	sample = pickle.loads(serialized_sample, encoding='latin1')
+ids = ['08d87a1983', 'd86247bb3b', '8eff33a35e', 'c98d265032', 'fca5e551be']
 
-pass
+for id in ids:
+	with env.begin(write=False) as txn:
+		serialized_sample = txn.get(id.encode())
+		sample = pickle.loads(serialized_sample, encoding='latin1')
+
+		print(sample['imgs'][0]['id'])
 
