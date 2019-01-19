@@ -12,6 +12,7 @@ import torch.backends.cudnn as cudnn
 from data_loader import ImagerLoader 
 from args import get_parser
 from trijoint import im2recipe
+from tqdm import tqdm
 
 # =============================================================================
 parser = get_parser()
@@ -21,7 +22,7 @@ opts = parser.parse_args()
 def main():
 
     model = im2recipe()
-    model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0,1,2,3])
+    model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0])
     # model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0,1])
     model.cuda()
 
@@ -82,7 +83,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(
         ImagerLoader(opts.img_path,
             transforms.Compose([
-            transforms.Scale(256), # rescale the image keeping the original aspect ratio
+            transforms.Resize(256), # rescale the image keeping the original aspect ratio
             transforms.CenterCrop(256), # we get only the center of that rescaled
             transforms.RandomCrop(224), # random crop within the center crop 
             transforms.RandomHorizontalFlip(),
@@ -97,7 +98,7 @@ def main():
     val_loader = torch.utils.data.DataLoader(
         ImagerLoader(opts.img_path,
             transforms.Compose([
-            transforms.Scale(256), # rescale the image keeping the original aspect ratio
+            transforms.Resize(256), # rescale the image keeping the original aspect ratio
             transforms.CenterCrop(224), # we get only the center of that rescaled
             transforms.ToTensor(),
             normalize,
@@ -157,7 +158,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
 
     end = time.time()
-    for i, (input, target) in enumerate(train_loader):
+    for i, (input, target) in enumerate(tqdm(train_loader)):
 
         # measure data loading time
         data_time.update(time.time() - end)
@@ -176,7 +177,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         # compute loss
         if opts.semantic_reg:
-            cos_loss = criterion[0](output[0], output[1], target_var[0])
+            cos_loss = criterion[0](output[0], output[1], target_var[0].float())
             img_loss = criterion[1](output[2], target_var[1])
             rec_loss = criterion[1](output[3], target_var[2])
             # combined loss
@@ -185,9 +186,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
                     opts.cls_weight * rec_loss 
 
             # measure performance and record losses
-            cos_losses.update(cos_loss.data[0], input[0].size(0))
-            img_losses.update(img_loss.data[0], input[0].size(0))
-            rec_losses.update(rec_loss.data[0], input[0].size(0))
+            cos_losses.update(cos_loss.item(), input[0].size(0))
+            img_losses.update(img_loss.item(), input[0].size(0))
+            rec_losses.update(rec_loss.item(), input[0].size(0))
         else:
             loss = criterion(output[0], output[1], target_var[0])
             # measure performance and record loss

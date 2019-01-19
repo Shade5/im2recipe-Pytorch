@@ -86,9 +86,9 @@ class ImagerLoader(data.Dataset):
                 rndindex = np.random.choice(all_idx)  # pick a random index
 
             with self.env.begin(write=False) as txn:
-                serialized_sample = txn.get(self.ids[rndindex])
+                serialized_sample = txn.get(self.ids[rndindex].encode())
 
-            rndsample = pickle.loads(serialized_sample)
+            rndsample = pickle.loads(serialized_sample, encoding='latin1')
             rndimgs = rndsample['imgs']
 
             if self.partition == 'train':  # if training we pick a random image
@@ -97,7 +97,9 @@ class ImagerLoader(data.Dataset):
             else:
                 imgIdx = 0
 
-            path = self.imgPath + rndimgs[imgIdx]['id']
+            loader_path = [rndimgs[imgIdx]['id'][i] for i in range(4)]
+            loader_path = os.path.join(*loader_path)
+            path = os.path.join(self.imgPath, self.partition, loader_path, rndimgs[imgIdx]['id'])
 
             # instructions
         instrs = sample['intrs']
