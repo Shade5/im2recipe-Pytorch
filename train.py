@@ -50,21 +50,11 @@ def main():
                 {'params': model.visionMLP.parameters(), 'lr': opts.lr*opts.freeVision }
             ], lr=opts.lr*opts.freeRecipe)
 
-    if opts.resume:
-        if os.path.isfile(opts.resume):
-            print(("=> loading checkpoint '{}'".format(opts.resume)))
-            checkpoint = torch.load(opts.resume)
-            opts.start_epoch = checkpoint['epoch']
-            best_val = checkpoint['best_val']
-            model.load_state_dict(checkpoint['state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            print(("=> loaded checkpoint '{}' (epoch {})"
-                  .format(opts.resume, checkpoint['epoch'])))
-        else:
-            print(("=> no checkpoint found at '{}'".format(opts.resume)))
-            best_val = float('inf') 
-    else:
-        best_val = float('inf') 
+    print(("=> loading checkpoint '{}'".format(opts.model_path)))
+    checkpoint = torch.load(opts.model_path)
+    model.load_state_dict(checkpoint)
+    best_val = float("inf")
+    print(("=> loaded checkpoint '{}' (epoch {})".format(opts.model_path, opts.start_epoch)))
 
     # models are save only when their loss obtains the best value in the validation
     valtrack = 0

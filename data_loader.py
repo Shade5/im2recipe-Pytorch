@@ -14,7 +14,7 @@ def default_loader(path):
         im = Image.open(path).convert('RGB')
         return im
     except:
-        print("Missing image", path)
+        # print("Missing image", path)
         return Image.new('RGB', (224, 224), 'white')
 
 
