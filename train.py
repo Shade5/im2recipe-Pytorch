@@ -181,7 +181,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
             img_loss = criterion[1](output[2], target_var[1])
             rec_loss = criterion[1](output[3], target_var[2])
             # combined loss
-            loss =  opts.cos_weight * cos_loss +\
+            loss = opts.cos_weight * cos_loss +\
                     opts.cls_weight * img_loss +\
                     opts.cls_weight * rec_loss 
 
@@ -248,10 +248,10 @@ def validate(val_loader, model, criterion):
             data2 = target[-2]
             data3 = target[-1]
         else:
-            data0 = np.concatenate((data0,output[0].data.cpu().numpy()),axis=0)
-            data1 = np.concatenate((data1,output[1].data.cpu().numpy()),axis=0)
-            data2 = np.concatenate((data2,target[-2]),axis=0)
-            data3 = np.concatenate((data3,target[-1]),axis=0)
+            data0 = np.concatenate((data0, output[0].data.cpu().numpy()), axis=0)
+            data1 = np.concatenate((data1, output[1].data.cpu().numpy()), axis=0)
+            data2 = np.concatenate((data2, target[-2]), axis=0)
+            data3 = np.concatenate((data3, target[-1]), axis=0)
 
     medR, recall = rank(opts, data0, data1, data2)
     print(('* Val medR {medR:.4f}\t'
