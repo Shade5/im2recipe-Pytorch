@@ -128,6 +128,7 @@ class im2recipe(nn.Module):
 
         # visual embedding
         visual_emb = self.visionMLP(x)
+        self.features = self.visionMLP.module[:8](x)
         visual_emb = visual_emb.view(visual_emb.size(0), -1)
         visual_emb = self.visual_embedding(visual_emb)
         visual_emb = norm(visual_emb)
